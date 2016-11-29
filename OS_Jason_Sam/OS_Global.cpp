@@ -5,7 +5,7 @@ string lable = "No";
 vector<string> codeStream;
 vector<symbol> symbolTable;
 
-bool symbolSearch(string symbolName){
+bool symbolnnnNNSearch(string symbolName){
     for(int symbol_index = 0; symbol_index < symbolTable.size(); symbol_index++){
         if(symbolTable[symbol_index].symbolName == symbolName)
             return true;

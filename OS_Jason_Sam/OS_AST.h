@@ -8,6 +8,13 @@
 #include <string>
 #include "OS_Token_Cmd.h"
 #include "OS_Global.h"
+
+#define OPINITLIST "OPINITLIST"
+#define OPINIT        "OPINIT"
+#define AL              "AL"
+#define DL              "DL"
+#define END           "$"
+
 using namespace std;
 
 class Function_AST{
@@ -19,110 +26,134 @@ public:
     void codeAst();
 };
 
-class Array_AST{
-protected:
-    string arrayName;
-    int arraySize;
-    vector<int> arrayValues;
-    string end;
-public:
-    Array_AST(string typeName, int size, vector<int> values):
-        arrayName(typeName),arraySize(size),arrayValues(values),end("$"){}
-     virtual void codeAst() = 0;
-};
-
-class IntArray_AST:public Array_AST{
-public:
-    IntArray_AST(string typeName, int size, vector<int> values):
-    Array_AST(typeName,size,values){}
-    void codeAst();
-};
-
-class StringArray_AST:public Array_AST{
-public:
-    StringArray_AST(string typeName, int size, vector<int> values):
-    Array_AST(typeName,size,values){}
-    void codeAst();
-};
-
-class Common_AST{
-protected:
-    string commonName;
-public:
-    Common_AST(string name):
-        commonName(name){}
-    virtual void codeAst() = 0;
-};
-
-class Int_Com_Ast:public Common_AST{
-public:
-    Int_Com_Ast(string name):
-        Common_AST(name){}
-    void codeAst();
-};
-
-class String_Ast:public Common_AST{
-public:
-    String_Ast(string name):
-        Common_AST(name){}
-    void codeAst();
-};
-
-class Number_AST{
-protected:
-    number_type numType;
-    string numName;
-public:
-    Number_AST(number_type type,string name):
-        numType(type),numName(name){}
-    virtual void codeAst() = 0;
-};
-
-class Int_Ast:public Number_AST{
-public:
-    Int_Ast(number_type type, string name):
-        Number_AST(type,name){}
-    void codeASt();
-};
-
-class Float_AST:public Number_AST{
-public:
-    Float_AST(number_type type, string name):
-        Number_AST(type,name){}
-    void codeASt();
-};
-
-class Double_AST:public Number_AST{
-public:
-    Double_AST(number_type type, string name):
-        Number_AST(type,name){}
-    void codeASt();
-};
-
+/*InitArray start
+   1.int
+   2.string
+*/
 class Init_AST{
-protected:
-    string initName;
 public:
-    Init_AST(string name):
-        initName(name){}
+    virtual string getName() = 0;
+    virtual void setName(string name) = 0;
     virtual void codeAst() = 0;
 };
 
-class Id_AST{
+class InitArray_AST:public Init_AST{
 private:
-    string idName;
+    static string mArrayKind;
+    static string mEnd;
+    string mName;
 public:
-    Id_AST(string name):idName(name){}
+    int getArraySize();
+    void setArraySize(int size);
+    static string getKind();
+    static string getEnd();
+    string getName(){
+        return mName;
+    }
+    void setName(string name){
+        mName = name;
+    }
+    virtual void codeAst();
+};
+
+class InitCommon_AST:public Init_AST{
+private:
+    static string comKind;
+    string mName;
+public:
+    static string getKind();
+    string getName(){
+        return mName;
+    }
+    void setName(string name){
+        mName = name;
+    }
+    virtual void codeAst();
+};
+
+class InitInt_AST:public Init_AST{
+private:
+    static string intKind;
+    string mKind;
+    string mName;
+    int mValue;
+public:
+    InitInt_AST(string name, int value):
+        mName(name), mValue(value){
+        mKind = InitCommon_AST::getKind();
+    }
+    InitInt_AST(){}
+    static string getDataKind();
+    string getName(){
+        return mName;
+    }
+    void setName(string name){
+        mName = name;
+    }
+    virtual void codeAst();
+};
+
+class InitString_AST:public Init_AST{
+private:
+    static string stringKind;
+    string mKind;
+    string mName;
+    string mValue;
+public:
+    InitString_AST(string name, string value):
+        mName(name), mValue(value){
+        mKind = InitCommon_AST::getKind();
+    }
+    InitString_AST(){}
+    static string getDataKind();
+    string getName(){
+        return mName;
+    }
+    void setName(string name){
+        mName = name;
+    }
+    virtual void codeAst();
+};
+
+class InitArrayInt_AST:public InitArray_AST,InitInt_AST{
+private:
+    vector<int> mNumberValues;
+    string mName;
+    int mSize;
+    string mKind;
+    string mDataKind;
+    string mEnd;
+public:
+    InitArrayInt_AST(string name,int size,vector<int> values):
+          mSize(size),mNumberValues(values){
+        setName(name);
+        mKind = InitArray_AST::getKind();
+        mDataKind = InitInt_AST::getDataKind();
+        mEnd =InitArray_AST::getEnd();
+    }
+    void setName(string name);
+    string getName();
     void codeAst();
 };
 
-class Compare_AST{
-private:
-    string comLabel;
-    string comOperate;
-    Id_AST *comLeftValues,*comRightValues;
-    Compare_AST(string lable, Id_AST* leftValues, string operate,Id_AST *rightValues):
-        comLabel(lable),comLeftValues(leftValues),comOperate(operate),comRightValues(rightValues){}
+class InitArrayString_AST:public InitArray_AST,InitString_AST{
+protected:
+    vector<string> mStringValues;
+    string mName;
+    int mSize;
+    string mKind;
+    string mDataKind;
+    string mEnd;
+public:
+    InitArrayString_AST(string name,int size, vector<string> values):
+         mSize(size), mStringValues(values){
+        setName(name);
+        mKind = InitArray_AST::getKind();
+        mDataKind = InitString_AST::getDataKind();
+        mEnd =InitArray_AST::getEnd();
+    }
+    void setName(string name);
+    string getName();
     void codeAst();
 };
 

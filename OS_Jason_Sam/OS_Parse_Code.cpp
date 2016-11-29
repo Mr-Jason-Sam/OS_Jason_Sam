@@ -23,6 +23,7 @@ void OS_Parse_Code::buildAst(){
             indexAdd();
             if(codeStream[index] == "="){
                 parseBinary(variableName);
+
             }
         }
         else if(isSystemFunc(token)){
@@ -38,8 +39,8 @@ void OS_Parse_Code::parseFunc(){
     indexAdd();
     string funcName = codeStream[index];
     checkName(funcName);
-
-
+    Function_AST *func = new Function_AST(funcName);
+    func->codeAst();
 
     indexAdd();
     checkToken("(");
@@ -67,6 +68,7 @@ bool OS_Parse_Code::isVariable(string token){
 }
 
 void OS_Parse_Code::parseBinary(string variableName){
+
     indexAdd();
 }
 
@@ -137,15 +139,112 @@ void OS_Parse_Code::parseKeyType(){
                 }
                 indexAdd();
                 symbolInsert(name,int_array);
-                Array_AST *array = new IntArray_AST(name,size,numberValues);
-                //IntArray_AST* intArrayAst = new IntArray_AST(name,size,numberValues);
-                array->codeAst();
-            }
+                InitArrayInt_AST *intArray_ast = NULL;
+                intArray_ast = new InitArrayInt_AST(name,size,numberValues);
+                intArray_ast->codeAst();
+            }else{
 
+            }
+        }else{
+            int value;
+            index--;
+            Init_AST *int_ast = NULL;
+            bool continuous = true;
+            while(continuous){
+                if(codeStream[index] == "="){
+                    indexAdd();
+                    if(checkNum(codeStream[index])){
+                        value = string2int(codeStream[index]);
+                    }
+                    if(codeStream[index+1] != ",")
+                        continuous = false;
+                }
+                else if (codeStream[index] == ","){
+                    indexAdd();
+                    continue;
+                }
+                else{
+                    name = codeStream[index];
+                    value = 0;
+                    if(codeStream[index+1] != ",")
+                        continuous = false;
+                }
+                int_ast = new InitInt_AST(name,value);
+                int_ast->codeAst();
+                indexAdd();
+            }
         }
     }
     else if (type == "string"){
+        if(codeStream[index] == "["){
+            indexAdd();
+            int size;
+            if(checkNum(codeStream[index]))
+                size = string2int(codeStream[index]);
+            indexAdd();
+            checkToken("]");
+            indexAdd();
+            if(codeStream[index] == "="){
+                indexAdd();
+                checkToken("{");
+                indexAdd();
+                vector<string> stringValues;
+                while(codeStream[index] != "}"){
+                    checkToken("\"");
+                    indexAdd();
+                    string values;
+                    while(codeStream[index] != "\""){
+                        values = codeStream[index];
+                        stringValues.push_back(values);
+                        indexAdd();
+                    }
+                    indexAdd();
+                    if(codeStream[index] == "}")
+                        break;
+                    checkToken(",");
+                    indexAdd();
+                }
+                indexAdd();
+                InitArrayString_AST *stringArray = NULL;
+                //symbolInsert(name,string_array);
+                stringArray = new InitArrayString_AST(name, size, stringValues);
+                stringArray->codeAst();
+            }else{
 
+             }
+        }else{
+            string value;
+            index--;
+            Init_AST *array_ast = NULL;
+            bool continuous = true;
+            while(continuous){
+                if(codeStream[index] == "="){
+                    indexAdd();
+                    if(codeStream[index] == "\""){
+                        indexAdd();
+                        if(checkName(codeStream[index])){
+                            value = string2char(codeStream[index]);
+                            checkToken("\"");
+                        }
+                    }
+                    if(codeStream[index+1] != ",")
+                        continuous = false;
+                }
+                else if (codeStream[index] == ","){
+                    indexAdd();
+                    continue;
+                }
+                else{
+                    name = codeStream[index];
+                    value = "NULL";
+                    if(codeStream[index+1] != ",")
+                        continuous = false;
+                }
+                array_ast = new InitString_AST(name,value);
+                array_ast->codeAst();
+                indexAdd();
+            }
+        }
     }
 }
 
@@ -184,6 +283,10 @@ bool OS_Parse_Code::checkName(string token){
     for(int key_index = 0; key_index < KEYWORDNUM; key_index++){
         if(keyword[key_index] == token){
             error(token +"is a keyword" );
+            return false;
+        }
+        if(isdigit(token[0])){
+            error(token +"\'s first is Number" );
             return false;
         }
     }
